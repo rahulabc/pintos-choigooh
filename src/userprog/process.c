@@ -15,9 +15,13 @@
 #include "threads/init.h"
 #include "threads/interrupt.h"
 #include "threads/palloc.h"
+#include "threads/malloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 #include "vm/frame.h"
+#include "vm/page.h"
+#include "vm/swap.h"
+
 
 #define CMD_LENGTH 128
 #define MAX_ARGV CMD_LENGTH
@@ -69,7 +73,7 @@ process_execute (const char *file_cmd)
 	file_name = strtok_r(temp," ",&saveptr);
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
-  fn_copy = get_user_page(0);
+  fn_copy = get_user_frame(0);
   if (fn_copy == NULL)
     return TID_ERROR;
   strlcpy (fn_copy, file_cmd, PGSIZE);
@@ -77,7 +81,7 @@ process_execute (const char *file_cmd)
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, execute_thread, fn_copy);
   if (tid == TID_ERROR)
-      free_user_page(fn_copy); 
+      free_user_frame(fn_copy); 
   free(temp);
   // create relationship between parent and child process
   child = get_thread(tid);
@@ -87,8 +91,6 @@ process_execute (const char *file_cmd)
   return tid;
 }
 
-
-
 static void
 execute_thread (void *file_name_)
 {
@@ -96,24 +98,27 @@ execute_thread (void *file_name_)
   struct intr_frame if_;
   bool success;
 
-	 //parsing
-	 int i, c = 0;
-	 char **temp = (char **)malloc(0);
-	 char *token, *save_ptr;
-	 for (token = strtok_r (file_name, " ", &save_ptr); token != NULL;
-	  token = strtok_r (NULL, " ", &save_ptr)) {
-	  c++;
-	  temp = (char **)realloc(temp, c * sizeof(char *));
-	  temp[c - 1] = token;
-	 }
-	 char *v[c];
-	 for (i = 0; i < c; i++) v[i] = temp[i];
-	 free(temp);
-	 // c = 0 -> do nothing
-	 if (c > 0) {
-	  strlcpy(file_name, v[0], strlen(v[0]) + 1); // because of assertion, 'file_name' must not be changed
-	  v[0] = file_name;
-	 }
+	//parsing
+	int i, c = 0;
+	char **temp = (char **)malloc(0);
+	char *token, *save_ptr;
+
+	for (token = strtok_r (file_name, " ", &save_ptr); token != NULL; token = strtok_r (NULL, " ", &save_ptr)) {
+		c++;
+		temp = (char **)realloc(temp, c * sizeof(char *));
+		temp[c - 1] = token;
+	}
+
+	char *v[c];
+	for (i = 0; i < c; i++) 
+		v[i] = temp[i];
+	free(temp);
+
+	// c = 0 -> do nothing
+	if (c > 0) {
+		strlcpy(file_name, v[0], strlen(v[0]) + 1); // because of assertion, 'file_name' must not be changed
+		v[0] = file_name;
+	}
 	 // free of allocation is ensured.
 
   /* Initialize interrupt frame and load executable. */
@@ -129,27 +134,30 @@ execute_thread (void *file_name_)
     thread_exit ();
   }
 
-	 char *argv_pt = if_.esp;
-	 for (i = c - 1; i >= 0; i--) {
-	  if_.esp -= strlen(v[i]) + 1;
-	  strlcpy(if_.esp, v[i], strlen(v[i]) + 1);
-	 }
-	 if_.esp = (void *)ROUND_DOWN((uint32_t)if_.esp, 4);
-	 for (i = c; i >= 0; i--) {
-	  if_.esp -= 4;
-	  if (i == c) *(char **)if_.esp = 0;
-	  else {
-	   argv_pt -= strlen(v[i]) + 1;
-	   *(char **)if_.esp = argv_pt;
-	  }
-	 }
-	 if_.esp -= 4;
-	 *(char ***)if_.esp = if_.esp + 4;
-	 if_.esp -= 4;
-	 *(int *)if_.esp = c;
-	 if_.esp -= 4;
- 
-    palloc_free_page (file_name);
+	char *argv_pt = if_.esp;
+	for (i = c - 1; i >= 0; i--) {
+ 		if_.esp -= strlen(v[i]) + 1;
+ 		strlcpy(if_.esp, v[i], strlen(v[i]) + 1);
+	}
+
+	if_.esp = (void *)ROUND_DOWN((uint32_t)if_.esp, 4);
+	for (i = c; i >= 0; i--) {
+ 		if_.esp -= 4;
+ 		if (i == c) 
+			*(char **)if_.esp = 0;
+ 		else {
+  		argv_pt -= strlen(v[i]) + 1;
+  		*(char **)if_.esp = argv_pt;
+ 		}
+	}
+
+	if_.esp -= 4;
+	*(char ***)if_.esp = if_.esp + 4;
+	if_.esp -= 4;
+	*(int *)if_.esp = c;
+	if_.esp -= 4;
+
+  palloc_free_page (file_name);
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -160,8 +168,6 @@ execute_thread (void *file_name_)
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
   NOT_REACHED ();
 }
-
-
 
 /* Waits for thread TID to die and returns its exit status.  If
    it was terminated by the kernel (i.e. killed due to an
@@ -615,15 +621,17 @@ setup_stack (void **esp)
   uint8_t *kpage;
   bool success = false;
 
-  kpage = palloc_get_page (PAL_USER | PAL_ZERO);
+  kpage = get_user_page(PAL_USER | PAL_ZERO);
+
   if (kpage != NULL) 
-    {
-      success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
-      if (success)
-        *esp = PHYS_BASE;
-      else
-        palloc_free_page (kpage);
-    }
+	{
+	  success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
+	  
+		if (success)
+      *esp = PHYS_BASE;
+    else
+			free_user_frame (kpage);
+  }
   return success;
 }
 
@@ -640,7 +648,10 @@ static bool
 install_page (void *upage, void *kpage, bool writable)
 {
   struct thread *t = thread_current ();
-
+	
+	install_frame(upage, kpage);
+	install_sup_page(upage, kpage, writable);
+	
   /* Verify that there's not already a page at that virtual
      address, then map our page there. */
   return (pagedir_get_page (t->pagedir, upage) == NULL
