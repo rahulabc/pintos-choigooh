@@ -35,6 +35,9 @@
 #include "filesys/filesys.h"
 #include "filesys/fsutil.h"
 #endif
+#include "vm/frame.h"
+#include "vm/page.h"
+#include "vm/swap.h"
 
 /* Amount of physical memory, in 4 kB pages. */
 size_t ram_pages;
@@ -105,7 +108,11 @@ main (void)
   syscall_init ();
   file_init();
 #endif
-
+	
+	frame_table_init();
+	sup_page_table_init();
+	swap_table_init();
+	
   /* Start thread scheduler and enable interrupts. */
   thread_start ();
   serial_init_queue ();

@@ -5,6 +5,11 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "userprog/process.h"
+#include "threads/palloc.h"
+#include "vm/page.h"
+#include "vm/frame.h"
+#include "vm/swap.h"
+#include <round.h>
 
 /* Number of page faults processed. */
 static long long page_fault_cnt;
@@ -149,15 +154,43 @@ page_fault (struct intr_frame *f)
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
 
-  /* To implement virtual memory, delete the rest of the function
-     body, and replace it with code that brings in the page to
-     which fault_addr refers. */
-  printf ("Page fault at %p: %s error %s page in %s context.\n",
-          fault_addr,
-          not_present ? "not present" : "rights violation",
-          write ? "writing" : "reading",
-          user ? "user" : "kernel");
- // kill (f);
-	user_exit(-1);
+	void* fault_page = pg_round_down(fault_addr);
+	 
+	if(not_present)
+	{
+		struct sup_page* p = get_sup_page_by_upage(fault_page);
+				
+		if(write && is_user_vaddr(fault_addr))	
+		{
+			// stack growth
+			void* kpage = get_user_frame(PAL_USER | PAL_ZERO);
+			
+			install_frame(fault_page, kpage);
+			install_sup_page(fault_page, kpage, true);		
+		}
+		else if(!write)
+		{
+			if(p->swap_exist)
+			{
+				void* kpage = get_user_frame(PAL_USER | PAL_ZERO);
+				swap_in(kpage, p->swap_slot_index);
+
+				install_frame(fault_page, kpage);
+				install_sup_page(fault_page, kpage, true);
+			}
+			else
+			{
+				user_exit(-1);
+			}
+		}
+		else
+		{
+			user_exit(-1);
+		}
+	}
+	else
+	{
+		user_exit(-1);
+	}
 }
 
