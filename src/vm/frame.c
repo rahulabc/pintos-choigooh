@@ -1,60 +1,77 @@
-#include<stdio.h>
-#include<frame.h>
-#include"userprog/process.h"
-#include"userprog/pagedir.h"
-#include"threads/thread.h"
-#include"threads/vaddr.h"
+#include <stdio.h>
+#include <list.h>
+#include "threads/palloc.h"
+#include "threads/thread.h"
+#include "threads/malloc.h"
+#include "userprog/pagedir.h"
+#include "vm/frame.h"
+#include "vm/swap.h"
 
-void init_frame_table()
+void frame_table_init()
 {
-    list_init(&frame_table);
+	list_init(&frame_table);
 }
 
-void add_frame(const void *upage)
+void install_frame(void* upage, void* kpage, uint32_t* pd)
 {
-    struct thread *cur = thread_current();
-    uint32_t *pd = cur->pagedir;
-    struct frame new_frame = malloc(sizeof(struct frame));
-    new_frame.pd = pd;
-    new_frame.upage = upage;
-    list_push_back(&frame_table, &new_frame.elem);
+  struct list_elem *e;
+  for (e = list_begin (&frame_table); e != list_end (&frame_table); e = list_next (e))
+  {
+		struct frame* f = list_entry (e, struct frame elem);
+		
+		if (f->kpage == kpage)
+		{
+			f->upage = upage;
+			f->pd = pd;
+		}
+  }
 }
 
-void remove_frame(struct frame *f)
+void add_frame(void* kpage)
 {
-    list_remove(&f->elem);
-    free(f);
+	struct frame* f = (struct frame*)malloc(sizeof(struct frame));
+	f->kpage = kpage;
+	f->pd = thread_current()->pagedir;
+	
+	list_push_back(&frame_table, &f->elem);
 }
 
-void destroy_frames(uint32_t *pd)
+void remove_frame(void* kpage)
 {
-    struct list_elem *e;
-    for(e=list_begin(&frame_table); e!=list_end(&frame_table); e=list_next(e))
-    {
-        struct frame *f = list_entry(e, struct frame, elem);
-        if(f-pd==pd)
-            remove_frame(f);
-    }
+	struct list_elem* e;
+	for (e = list_begin (&frame_table); e != list_end (&frame_table); e = list_next (e))
+  {
+		struct frame* f = list_entry (e, struct frame, elem);
+		if (f->kpage == kpage)
+		{
+			list_remove(&f->elem);
+			free(f);
+			break;
+		}
+  }
 }
 
-void * get_user_page(enum palloc_flags flags)
+void* get_user_frame(enum palloc_flags flags)
 {
-    void * kpage = palloc_get_page(flags);
-    add_frame(kpage);  // we have problem
-    return kpage;
+	void* kpage = palloc_get_page(flags);
+
+	if(kpage == NULL)
+	{
+		eviction();
+		kpage = palloc_get_page(flags);	
+	}
+
+	add_frame(kpage);
+	add_sup_page(kpage);
+
+	return kpage;
 }
 
-void free_user_page(void *kpage)
+void free_user_frame(void *kpage)
 {
-    struct list_elem *e;
-    for(e=list_begin(&frame_table); e!=list_end(&frame_table); e=list_next(e))
-    {
-        struct frame *f = list_entry(e, struct frame, elem);
-        /* if same with kpage */
-            remove_frame(f);
-        break;
-    }
-    palloc_free_page(kpage);
+	remove_frame(kpage);
+	unmap_sup_page(kpage);
+	palloc_free_page(kpage);
 }
 
 void eviction()
@@ -86,24 +103,3 @@ void eviction()
     }
 }
 
-void * get_exist_page(const void *upage)
-{
-    void * new_kpage = palloc_get_page(PAL_USER);
-
-    if(new_kpage!=NULL)
-    {
-        // swap in to new_kpage
-        return new_kpage;
-    }
-    else
-    {
-        eviction();
-        new_kpage = palloc_get_page(PAL_USER);
-        if(new_kpage==NULL)
-        {
-            printf("Error !! \n");
-            user_exit(-1);
-        }
-        return new_kpage;
-    }
-}
