@@ -52,9 +52,10 @@ void unmap_sup_page(void* kpage)
 void remove_sup_page(void* kpage)
 {
 	struct list_elem* e;
+	struct sup_page *p;
 	for (e = list_begin (&sup_page_table); e != list_end (&sup_page_table); e = list_next (e))
   	{
-		struct sup_page* p = list_entry (e, struct sup_page, elem);
+		p = list_entry (e, struct sup_page, elem);
 		if (p->kpage == kpage)
 		{
 			list_remove(&p->elem);
@@ -62,7 +63,7 @@ void remove_sup_page(void* kpage)
 			{
 				swap_clear(p->swap_slot_index);
 			}
-			//free(p);
+			free(p);
 			break;
 		}
   	}	
@@ -71,9 +72,10 @@ void remove_sup_page(void* kpage)
 void destroy_sup_page(struct thread* t)
 {
 	struct list_elem* e;
+	struct sup_page *p;
 	for (e = list_begin (&sup_page_table); e != list_end (&sup_page_table); e = list_next (e))
   	{
-		struct sup_page* p = list_entry (e, struct sup_page, elem);
+		p = list_entry (e, struct sup_page, elem);
 		if (p->t == t)
 		{
 			list_remove(&p->elem);
@@ -81,7 +83,7 @@ void destroy_sup_page(struct thread* t)
 			{
 				swap_clear(p->swap_slot_index);
 			}
-			//free(p);
+			free(p);
 		}
   	}	
 }
