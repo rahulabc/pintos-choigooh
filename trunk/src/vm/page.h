@@ -15,7 +15,7 @@ struct sup_page
 struct list sup_page_table;
 
 void sup_page_table_init();
-void install_sup_page(void* upage, void* kpage, bool writable);
+bool install_sup_page(void* upage, void* kpage, bool writable);
 void add_sup_page(void* kpage);
 void unmap_sup_page(void* kpage);
 void remove_sup_page(void* kpage);

@@ -17,7 +17,7 @@ void frame_table_init()
     lock_init(&f_lock);
 }
 
-bool install_frame(void* upage, void* kpage, uint32_t* pd)
+bool install_frame(void* upage, void* kpage)
 {
   struct list_elem *e;
   lock_acquire(&f_lock);
@@ -28,7 +28,6 @@ bool install_frame(void* upage, void* kpage, uint32_t* pd)
 		if (f->kpage == kpage)
 		{
 			f->upage = upage;
-			f->pd = pd;
             lock_release(&f_lock);
             return true;
 		}
