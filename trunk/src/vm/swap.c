@@ -64,6 +64,7 @@ void swap_clear(int32_t swap_slot_index) {
 
 int32_t swap_out(void* kpage, int32_t swap_slot_index){
 	ASSERT(swap_slot_index <= SWAP_MAX);
+	disk = disk_get(1,1);
 	if(swap_slot_index>=0) {
 		int i;
 		for (i = 0 ; i< 8 ; i++)
