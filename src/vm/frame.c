@@ -129,8 +129,16 @@ void eviction()
         {
            if(pagedir_is_dirty(frame->pd, frame->upage))
            {
-               //int index = swap_out(frame->kpage);
-               //sup_page update
+				struct sup_page p* = get_user_frame_by_kpage(frame->kpage);
+				if(p->swap_exist)
+				{
+					swap_out(frame->kpage, p->swap_slot_index);
+				}
+				else
+				{
+					p->swap_slot_index = swap_out(frame->kpage, -1);
+					p->swap_exist = true;
+				}
            }
            unmap_user_frame(frame->kpage);
            break;
