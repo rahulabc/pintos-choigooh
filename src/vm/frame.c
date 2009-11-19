@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <list.h>
-#include <lock.h>
+#include "threads/synch.h"
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/malloc.h"
@@ -114,12 +114,12 @@ void eviction()
 {
     int i, size;
     lock_acquire(&f_lock);
-    size = list_size(frame_table);
+    size = list_size(&frame_table);
     i = 0;
     while(true)
     {
         i++;
-        struct *frame = list_pop_front(&frame_table);
+        struct frame *frame = list_pop_front(&frame_table);
         if(pagedir_is_accessed(frame->pd, frame->upage))
         {
             pagedir_set_accessed(frame->pd, frame->upage, false);
@@ -129,7 +129,7 @@ void eviction()
         {
            if(pagedir_is_dirty(frame->pd, frame->upage))
            {
-				struct sup_page p* = get_user_frame_by_kpage(frame->kpage);
+				struct sup_page *p = get_sup_page_by_kpage(frame->kpage);
 				if(p->swap_exist)
 				{
 					swap_out(frame->kpage, p->swap_slot_index);
@@ -144,6 +144,6 @@ void eviction()
            break;
         }
     }
-    rock_release(&f_lock);
+    lock_release(&f_lock);
 }
 

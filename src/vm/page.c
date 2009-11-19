@@ -11,7 +11,7 @@ bool install_sup_page(void* upage, void* kpage, bool writable)
   	struct list_elem *e;
   	for (e = list_begin (&sup_page_table); e != list_end (&sup_page_table); e = list_next (e))
   	{
-		struct frame* p = list_entry (e, struct sup_page elem);
+		struct sup_page* p = list_entry (e, struct sup_page, elem);
 		
 		if (p->kpage == kpage && p->t == thread_current())
 		{
