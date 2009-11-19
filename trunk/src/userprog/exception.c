@@ -10,6 +10,7 @@
 #include "vm/frame.h"
 #include "vm/swap.h"
 #include <round.h>
+#include "threads/vaddr.h"
 
 /* Number of page faults processed. */
 static long long page_fault_cnt;
