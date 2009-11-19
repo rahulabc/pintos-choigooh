@@ -9,6 +9,7 @@ struct sup_page
 	bool swap_exist;
 	struct thread* t;
 	struct list_elem elem;
+	
 };
 
 struct list sup_page_table;

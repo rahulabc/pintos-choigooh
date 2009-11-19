@@ -11,7 +11,12 @@ void swap_in(void* kpage, int32_t swap_slot_index)
 	disk = disk_get(1,1);
 
 	int i;	
-	for (i = 0 ; i< 8 ; i++)
+	for (i = 0 ; i < 8 ; i++)
 		disk_read (disk, swap_slot_index + i, kpage + (i * DISK_SECTOR_SIZE));
+}
+
+int32_t swap_out(void* kpage)
+{
+	
 }
 
