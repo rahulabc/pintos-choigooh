@@ -111,7 +111,7 @@ main (void)
 	
 	frame_table_init();
 	sup_page_table_init();
-	swap_table_init();
+	swap_init();
 	
   /* Start thread scheduler and enable interrupts. */
   thread_start ();

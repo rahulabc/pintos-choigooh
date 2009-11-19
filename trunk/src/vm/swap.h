@@ -1,5 +1,5 @@
 #include <list.h>
-#include "devices/disk.h"
+
 
 struct swap_slot
 {
