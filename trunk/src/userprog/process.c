@@ -73,7 +73,7 @@ process_execute (const char *file_cmd)
 	file_name = strtok_r(temp," ",&saveptr);
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
-  fn_copy = get_user_frame(0);
+  fn_copy = palloc_get_page(0);
   if (fn_copy == NULL)
     return TID_ERROR;
   strlcpy (fn_copy, file_cmd, PGSIZE);
@@ -81,7 +81,7 @@ process_execute (const char *file_cmd)
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, execute_thread, fn_copy);
   if (tid == TID_ERROR)
-      free_user_frame(fn_copy); 
+      palloc_free_page(fn_copy); 
   free(temp);
   // create relationship between parent and child process
   child = get_thread(tid);
@@ -508,7 +508,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
 /* load() helpers. */
 
-static bool install_page (void *upage, void *kpage, bool writable);
+//static bool install_page (void *upage, void *kpage, bool writable);
 
 /* Checks whether PHDR describes a valid, loadable segment in
    FILE and returns true if so, false otherwise. */
@@ -645,7 +645,7 @@ setup_stack (void **esp)
    with palloc_get_page().
    Returns true on success, false if UPAGE is already mapped or
    if memory allocation fails. */
-static bool
+bool
 install_page (void *upage, void *kpage, bool writable)
 {
   struct thread *t = thread_current ();

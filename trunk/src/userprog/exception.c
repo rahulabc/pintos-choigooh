@@ -165,18 +165,23 @@ page_fault (struct intr_frame *f)
 		{
 			if(p->swap_exist)
 			{
-				void* kpage = get_user_frame(true);
+				void* kpage = get_user_frame(false);
 				swap_in(kpage, p->swap_slot_index);
-				install_frame(fault_page, kpage);
-				install_sup_page(fault_page, kpage, true);
+				install_page(fault_page, kpage, true);
+				return;
+			}
+			else
+			{
+				user_exit(-1);
 			}
 		}
 		else if(p == NULL && is_user_vaddr(fault_addr) && fault_addr > PHYS_BASE - 0x800000 && write)
 		{
 			//stack growth
-			void* kpage = get_user_frame(false);
-			install_frame(fault_page, kpage);
-			install_sup_page(fault_page, kpage, true);
+			void* kpage = get_user_frame(true);
+			install_page(fault_page, kpage, true);
+			
+			return;
 		}
 		else
 		{

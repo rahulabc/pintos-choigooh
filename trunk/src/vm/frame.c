@@ -58,7 +58,7 @@ void remove_frame(void* kpage)
 		if (f->kpage == kpage)
 		{
 			list_remove(&f->elem);
-			free(f);
+			//free(f);
 			break;
 		}
     }
@@ -75,7 +75,7 @@ void destroy_frame(uint32_t * pd)
 		if (f->pd == pd)
 		{
 			list_remove(&f->elem);
-			free(f);
+			//free(f);
 		}
     }
     //lock_release(&f_lock);
