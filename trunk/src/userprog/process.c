@@ -288,6 +288,7 @@ process_exit (void)
      to the kernel-only page directory. */
 	pd = cur->pagedir;
     destroy_frame(pd);
+    destroy_sup_page(cur);
 	if (pd != NULL) 
 	{
      /* Correct ordering here is crucial.  We must set
@@ -621,7 +622,7 @@ setup_stack (void **esp)
   uint8_t *kpage;
   bool success = false;
 
-  kpage = get_user_page(PAL_USER | PAL_ZERO);
+  kpage = get_user_frame(true);
 
   if (kpage != NULL) 
 	{
