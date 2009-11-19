@@ -9,18 +9,18 @@
 #include "vm/swap.h"
 #include "vm/page.h"
 
-struct lock f_lock;
+//struct lock f_lock;
 
 void frame_table_init()
 {
 	list_init(&frame_table);
-    lock_init(&f_lock);
+  //  lock_init(&f_lock);
 }
 
 bool install_frame(void* upage, void* kpage)
 {
   struct list_elem *e;
-  lock_acquire(&f_lock);
+//  lock_acquire(&f_lock);
   for (e = list_begin (&frame_table); e != list_end (&frame_table); e = list_next (e))
   {
 		struct frame* f = list_entry (e, struct frame, elem);
@@ -28,11 +28,11 @@ bool install_frame(void* upage, void* kpage)
 		if (f->kpage == kpage)
 		{
 			f->upage = upage;
-            lock_release(&f_lock);
+  //          lock_release(&f_lock);
             return true;
 		}
   }
-  lock_release(&f_lock);
+//  lock_release(&f_lock);
   return false;
 }
 
@@ -42,16 +42,16 @@ void add_frame(void* kpage)
 	f->kpage = kpage;
 	f->pd = thread_current()->pagedir;
 
-    lock_acquire(&f_lock);
+  //  lock_acquire(&f_lock);
 	list_push_back(&frame_table, &f->elem);
-    lock_release(&f_lock);
+    //lock_release(&f_lock);
 }
 
 void remove_frame(void* kpage)
 {
 	struct list_elem* e;
 
-    lock_acquire(&f_lock);
+//    lock_acquire(&f_lock);
 	for (e = list_begin (&frame_table); e != list_end (&frame_table); e = list_next (e))
     {
 		struct frame* f = list_entry (e, struct frame, elem);
@@ -62,13 +62,13 @@ void remove_frame(void* kpage)
 			break;
 		}
     }
-    lock_release(&f_lock);
+  //  lock_release(&f_lock);
 }
 
 void destroy_frame(uint32_t * pd)
 {
 	struct list_elem* e;
-    lock_acquire(&f_lock);
+    //lock_acquire(&f_lock);
 	for (e = list_begin (&frame_table); e != list_end (&frame_table); e = list_next (e))
     {
 		struct frame* f = list_entry (e, struct frame, elem);
@@ -78,7 +78,7 @@ void destroy_frame(uint32_t * pd)
 			free(f);
 		}
     }
-    lock_release(&f_lock);
+    //lock_release(&f_lock);
 }
 
 void* get_user_frame(bool zero)
@@ -113,7 +113,7 @@ void unmap_user_frame(void *kpage)
 void eviction()
 {
     int i, size;
-    lock_acquire(&f_lock);
+//    lock_acquire(&f_lock);
     size = list_size(&frame_table);
     i = 0;
     while(true)
@@ -144,6 +144,6 @@ void eviction()
            break;
         }
     }
-    lock_release(&f_lock);
+  //  lock_release(&f_lock);
 }
 
