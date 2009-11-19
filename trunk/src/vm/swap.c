@@ -78,7 +78,7 @@ int32_t swap_out(void* kpage, int32_t swap_slot_index){
 				for (i = 0; i < 8; i++)
 					disk_write(disk, empty_slot_pointer * 8 + i, kpage + (i * DISK_SECTOR_SIZE));
 				empty_slot_pointer ++;
-				return empty_slot_pointer;
+				return empty_slot_pointer-1;
 			}
 			else{
 				return -1;
