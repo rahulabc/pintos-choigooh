@@ -1,14 +1,4 @@
-#include <lib/kernel/list.h>
-
-struct frame
-{
-    void* upage;
-    void* kpage;
-    uint32_t* pd;
-    struct list_elem elem;
-};
-
-struct list frame_table;
+#include <list.h>
 
 void frame_table_init();
 bool install_frame(void* upage, void* kpage);
@@ -19,4 +9,14 @@ void* get_user_frame(bool zero);
 void free_user_frame(void *kpage);
 void unmap_user_frame(void *kpage);
 void eviction();
+
+struct frame
+{
+    void* upage;
+    void* kpage;
+    uint32_t* pd;
+    struct list_elem elem;
+};
+
+struct list frame_table;
 
