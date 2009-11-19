@@ -22,3 +22,4 @@ void remove_sup_page(void* kpage);
 void destroy_sup_page(struct thread* t);
 struct sup_page* get_sup_page_by_kpage(void* kpage);
 struct sup_page* get_sup_page_by_upage(void* upage);
+
