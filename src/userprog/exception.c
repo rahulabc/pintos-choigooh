@@ -175,8 +175,8 @@ page_fault (struct intr_frame *f)
 				void* kpage = get_user_frame(PAL_USER | PAL_ZERO);
 				swap_in(kpage, p->swap_slot_index);
 
-				install_frame(fault_page, kpage);
-				install_sup_page(fault_page, kpage, true);
+//				install_frame(fault_page, kpage); 지울 것 
+//				install_sup_page(fault_page, kpage, true); 지울 것 
 			}
 			else
 			{

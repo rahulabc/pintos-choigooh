@@ -17,7 +17,7 @@ void install_frame(void* upage, void* kpage, uint32_t* pd)
   struct list_elem *e;
   for (e = list_begin (&frame_table); e != list_end (&frame_table); e = list_next (e))
   {
-		struct frame* f = list_entry (e, struct frame elem);
+		struct frame* f = list_entry (e, struct frame, elem);
 		
 		if (f->kpage == kpage)
 		{
@@ -31,6 +31,7 @@ void add_frame(void* kpage)
 {
 	struct frame* f = (struct frame*)malloc(sizeof(struct frame));
 	f->kpage = kpage;
+	//f->upage = ptov(kpage);
 	f->pd = thread_current()->pagedir;
 	
 	list_push_back(&frame_table, &f->elem);
@@ -60,6 +61,8 @@ void* get_user_frame(enum palloc_flags flags)
 		eviction();
 		kpage = palloc_get_page(flags);	
 	}
+	
+//	install_page(kpage, ptov(kpage), pt에서 얻어와 );
 
 	add_frame(kpage);
 	add_sup_page(kpage);

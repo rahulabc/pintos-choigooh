@@ -41,7 +41,7 @@ void unmap_sup_page(void* kpage)
 		struct sup_page* p = list_entry (e, struct sup_page, elem);
 		if (p->kpage == kpage)
 		{
-			p->upage = NULL;
+			p->kpage = NULL;
 			break;
 		}
   }	
