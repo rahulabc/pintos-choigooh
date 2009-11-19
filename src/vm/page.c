@@ -63,7 +63,7 @@ void remove_sup_page(void* kpage)
 			{
 				swap_clear(p->swap_slot_index);
 			}
-			free(p);
+//			free(p);
 			break;
 		}
   	}	
@@ -83,7 +83,7 @@ void destroy_sup_page(struct thread* t)
 			{
 				swap_clear(p->swap_slot_index);
 			}
-			free(p);
+//			free(p);
 		}
   	}	
 }
