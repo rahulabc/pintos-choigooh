@@ -31,7 +31,7 @@ void add_frame(void* kpage)
 {
 	struct frame* f = (struct frame*)malloc(sizeof(struct frame));
 	f->kpage = kpage;
-	//f->upage = ptov(kpage);
+//	f->upage = ptov(kpage);
 	f->pd = thread_current()->pagedir;
 	
 	list_push_back(&frame_table, &f->elem);

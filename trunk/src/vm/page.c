@@ -47,6 +47,21 @@ void unmap_sup_page(void* kpage)
   }	
 }
 
+void destroy_sup_page(struct thread* t)
+{
+	struct list_elem* e;
+	for (e = list_begin (&sup_page_table); e != list_end (&sup_page_table); e = list_next (e))
+  {
+		struct sup_page* p = list_entry (e, struct sup_page, elem);
+		if (p->t == t)
+		{
+			list_remove(&p->elem);
+			free(p);
+		}
+  }	
+	return NULL;	
+}
+
 struct sup_page* get_sup_page_by_kpage(void* kpage)
 {
 	struct list_elem* e;
@@ -58,6 +73,7 @@ struct sup_page* get_sup_page_by_kpage(void* kpage)
   }	
 	return NULL;
 }
+
 
 struct sup_page* get_sup_page_by_upage(void* upage)
 {
