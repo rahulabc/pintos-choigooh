@@ -35,7 +35,7 @@ syscall_handler (struct intr_frame *f)
 		case SYS_EXIT:
 			process__exit(*(int*)(f->esp + 4));
             // print exit message
-			printf("%s : exit(%d).\n", cur->name, *(int*)(f->esp + 4));
+			printf("%s: exit(%d)\n", cur->name, *(int*)(f->esp + 4));
             thread_exit();
 			break;
 
