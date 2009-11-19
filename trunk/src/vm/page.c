@@ -58,6 +58,10 @@ void remove_sup_page(void* kpage)
 		if (p->kpage == kpage)
 		{
 			list_remove(&p->elem);
+			if(p->swap_exist)
+			{
+				swap_clear(p->swap_slot_index);
+			}
 			free(p);
 			break;
 		}
@@ -73,6 +77,10 @@ void destroy_sup_page(struct thread* t)
 		if (p->t == t)
 		{
 			list_remove(&p->elem);
+			if(p->swap_exist)
+			{
+				swap_clear(p->swap_slot_index);
+			}
 			free(p);
 		}
   	}	
