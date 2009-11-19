@@ -8,3 +8,7 @@ struct swap_slot
 };
 
 struct list swap_table;
+
+void swap_init();
+void swap_in(void* kpage, int32_t swap_slot_index);
+int32_t swap_out(void* kpage);
