@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <list.h>
+#include <lock.h>
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/malloc.h"
@@ -7,14 +8,18 @@
 #include "vm/frame.h"
 #include "vm/swap.h"
 
+struct lock f_lock;
+
 void frame_table_init()
 {
 	list_init(&frame_table);
+    lock_init(&f_lock);
 }
 
-void install_frame(void* upage, void* kpage, uint32_t* pd)
+bool install_frame(void* upage, void* kpage, uint32_t* pd)
 {
   struct list_elem *e;
+  lock_acquire(&f_lock);
   for (e = list_begin (&frame_table); e != list_end (&frame_table); e = list_next (e))
   {
 		struct frame* f = list_entry (e, struct frame, elem);
@@ -23,25 +28,32 @@ void install_frame(void* upage, void* kpage, uint32_t* pd)
 		{
 			f->upage = upage;
 			f->pd = pd;
+            lock_release(&f_lock);
+            return true;
 		}
   }
+  lock_release(&f_lock);
+  return false;
 }
 
 void add_frame(void* kpage)
 {
 	struct frame* f = (struct frame*)malloc(sizeof(struct frame));
 	f->kpage = kpage;
-//	f->upage = ptov(kpage);
 	f->pd = thread_current()->pagedir;
-	
+
+    lock_acquire(&f_lock);
 	list_push_back(&frame_table, &f->elem);
+    lock_release(&f_lock);
 }
 
 void remove_frame(void* kpage)
 {
 	struct list_elem* e;
+
+    lock_acquire(&f_lock);
 	for (e = list_begin (&frame_table); e != list_end (&frame_table); e = list_next (e))
-  {
+    {
 		struct frame* f = list_entry (e, struct frame, elem);
 		if (f->kpage == kpage)
 		{
@@ -49,21 +61,36 @@ void remove_frame(void* kpage)
 			free(f);
 			break;
 		}
-  }
+    }
+    lock_release(&f_lock);
 }
 
-void* get_user_frame(enum palloc_flags flags)
+void destroy_frame(uint32_t * pd)
 {
-	void* kpage = palloc_get_page(flags);
+	struct list_elem* e;
+    lock_acquire(&f_lock);
+	for (e = list_begin (&frame_table); e != list_end (&frame_table); e = list_next (e))
+    {
+		struct frame* f = list_entry (e, struct frame, elem);
+		if (f->pd == pd)
+		{
+			list_remove(&f->elem);
+			free(f);
+		}
+    }
+    lock_release(&f_lock);
+}
+
+void* get_user_frame(bool zero)
+{
+	void* kpage = (zero ? palloc_get_page(PAL_USER | PAL_ZERO) : palloc_get_page(PAL_USER));
 
 	if(kpage == NULL)
 	{
 		eviction();
-		kpage = palloc_get_page(flags);	
+		kpage = (zero ? palloc_get_page(PAL_USER | PAL_ZERO) : palloc_get_page(PAL_USER));	
 	}
 	
-//	install_page(kpage, ptov(kpage), pt에서 얻어와 );
-
 	add_frame(kpage);
 	add_sup_page(kpage);
 
@@ -80,6 +107,7 @@ void free_user_frame(void *kpage)
 void eviction()
 {
     int i, size;
+    lock_acquire(&f_lock);
     size = list_size(frame_table);
     i = 0;
     while(true)
@@ -104,5 +132,6 @@ void eviction()
            break;
         }
     }
+    rock_release(&f_lock);
 }
 
