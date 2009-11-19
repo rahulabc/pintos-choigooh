@@ -6,7 +6,7 @@ void sup_page_table_init()
 	list_init(&sup_page_table);
 }
 
-void install_sup_page(void* upage, void* kpage, bool writable)
+bool install_sup_page(void* upage, void* kpage, bool writable)
 {
   	struct list_elem *e;
   	for (e = list_begin (&sup_page_table); e != list_end (&sup_page_table); e = list_next (e))
@@ -17,9 +17,11 @@ void install_sup_page(void* upage, void* kpage, bool writable)
 		{
 			p->upage = upage;
 			p->writable = writable;
-			break;
+
+			return true;
 		}
   	}
+    return false;
 }
 
 void add_sup_page(void* kpage)
