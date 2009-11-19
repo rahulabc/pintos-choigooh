@@ -7,6 +7,7 @@
 #include "userprog/pagedir.h"
 #include "vm/frame.h"
 #include "vm/swap.h"
+#include "vm/page.h"
 
 struct lock f_lock;
 
@@ -99,6 +100,12 @@ void* get_user_frame(bool zero)
 
 void free_user_frame(void *kpage)
 {
+    remove_frame(kpage);
+    palloc_free_page(kpage);
+    remove_sup_page(kpage);
+}
+void unmap_user_frame(void *kpage)
+{
 	remove_frame(kpage);
 	unmap_sup_page(kpage);
 	palloc_free_page(kpage);
@@ -121,14 +128,12 @@ void eviction()
         }
         else
         {
-            if(pagedir_is_dirty(frame->pd, frame->upage))
-            {
-                /* write back */
-
-            }
-           /* swap out */
-
-           free(frame);
+           if(pagedir_is_dirty(frame->pd, frame->upage))
+           {
+               //int index = swap_out(frame->kpage);
+               //sup_page update
+           }
+           unmap_user_frame(frame->kpage);
            break;
         }
     }
