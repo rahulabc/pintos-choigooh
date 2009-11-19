@@ -69,7 +69,7 @@ process_execute (const char *file_cmd)
 	char *fn_copy;
 	char *saveptr;
 	 
-     strlcpy(temp, file_cmd, strlen(file_cmd));
+     strlcpy(temp, file_cmd, strlen(file_cmd)+1);
 	file_name = strtok_r(temp," ",&saveptr);
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
@@ -193,7 +193,7 @@ process_wait (tid_t child_tid UNUSED)
 		if(t->tid==child_tid)
 			break;
 	}
-    
+	
     // if there is no child whose tid is equal to argument, return -1
 	if(e==list_end(child_list))
 		return -1;
