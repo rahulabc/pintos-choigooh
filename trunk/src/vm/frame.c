@@ -20,10 +20,11 @@ void frame_table_init()
 bool install_frame(void* upage, void* kpage)
 {
   struct list_elem *e;
+  struct frame *f;
 //  lock_acquire(&f_lock);
   for (e = list_begin (&frame_table); e != list_end (&frame_table); e = list_next (e))
   {
-		struct frame* f = list_entry (e, struct frame, elem);
+		f = list_entry (e, struct frame, elem);
 		
 		if (f->kpage == kpage)
 		{
@@ -50,15 +51,16 @@ void add_frame(void* kpage)
 void remove_frame(void* kpage)
 {
 	struct list_elem* e;
+	struct frame *f;
 
 //    lock_acquire(&f_lock);
 	for (e = list_begin (&frame_table); e != list_end (&frame_table); e = list_next (e))
     {
-		struct frame* f = list_entry (e, struct frame, elem);
+		f = list_entry (e, struct frame, elem);
 		if (f->kpage == kpage)
 		{
 			list_remove(&f->elem);
-			//free(f);
+			free(f);
 			break;
 		}
     }
@@ -68,14 +70,15 @@ void remove_frame(void* kpage)
 void destroy_frame(uint32_t * pd)
 {
 	struct list_elem* e;
+	struct frame *f;
     //lock_acquire(&f_lock);
 	for (e = list_begin (&frame_table); e != list_end (&frame_table); e = list_next (e))
     {
-		struct frame* f = list_entry (e, struct frame, elem);
+		f = list_entry (e, struct frame, elem);
 		if (f->pd == pd)
 		{
 			list_remove(&f->elem);
-			//free(f);
+			free(f);
 		}
     }
     //lock_release(&f_lock);
