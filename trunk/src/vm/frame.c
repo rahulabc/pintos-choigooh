@@ -7,19 +7,15 @@
 #include "vm/swap.h"
 #include "vm/page.h"
 
-//struct lock f_lock;
-
 void frame_table_init()
 {
 	list_init(&frame_table);
-  //  lock_init(&f_lock);
 }
 
 bool install_frame(void* upage, void* kpage)
 {
   struct list_elem *e;
   struct frame *f;
-//  lock_acquire(&f_lock);
   for (e = list_begin (&frame_table); e != list_end (&frame_table); e = list_next (e))
   {
 		f = list_entry (e, struct frame, elem);
@@ -27,11 +23,9 @@ bool install_frame(void* upage, void* kpage)
 		if (f->kpage == kpage)
 		{
 			f->upage = upage;
-  //          lock_release(&f_lock);
             return true;
 		}
   }
-//  lock_release(&f_lock);
   return false;
 }
 
@@ -40,11 +34,7 @@ void add_frame(void* kpage)
 	struct frame* f = (struct frame*)malloc(sizeof(struct frame));
 	f->kpage = kpage;
 	f->pd = thread_current()->pagedir;
-	if(f->kpage==0xc01190f8)
-		printf("%0xu\n", f->pd);
-  //  lock_acquire(&f_lock);
 	list_push_back(&frame_table, &f->elem);
-    //lock_release(&f_lock);
 }
 
 void remove_frame(void* kpage)
@@ -52,36 +42,30 @@ void remove_frame(void* kpage)
 	struct list_elem* e;
 	struct frame *f;
 
-//    lock_acquire(&f_lock);
 	for (e = list_begin (&frame_table); e != list_end (&frame_table); e = list_next (e))
     {
 		f = list_entry (e, struct frame, elem);
 		if (f->kpage == kpage)
 		{
 			list_remove(&f->elem);
-//			free(f);
 			break;
 		}
     }
 	ASSERT(e==list_end(&frame_table));
-  //  lock_release(&f_lock);
 }
 
 void destroy_frame(uint32_t * pd)
 {
 	struct list_elem* e;
 	struct frame *f;
-    //lock_acquire(&f_lock);
 	for (e = list_begin (&frame_table); e != list_end (&frame_table); e = list_next (e))
     {
 		f = list_entry (e, struct frame, elem);
 		if (f->pd == pd)
 		{
 			list_remove(&f->elem);
-//			free(f);
 		}
     }
-    //lock_release(&f_lock);
 }
 
 void* get_user_frame(bool zero)
@@ -113,14 +97,9 @@ void unmap_user_frame(void *kpage)
 
 void eviction(bool zero)
 {
-    int i, size;
 	void *val=NULL;
-//    lock_acquire(&f_lock);
-    size = list_size(&frame_table);
-    i = 0;
     do
     {
-        i++;
 		struct list_elem *e = list_pop_front(&frame_table);
 		struct frame *frame = list_entry(e, struct frame, elem);
         if(pagedir_is_accessed(frame->pd, frame->upage))
@@ -141,11 +120,9 @@ void eviction(bool zero)
 				p->swap_exist = true;
 				ASSERT(p->swap_slot_index!=-1);
 			}
-			printf("free!! upage : %d kpage : %u\n", p->upage, p->kpage);
 			unmap_user_frame(frame->kpage);
 			val = palloc_get_page(zero ? (PAL_USER | PAL_ZERO) : PAL_USER);
         }
     }while(val==NULL);
-  //  lock_release(&f_lock);
 }
 
