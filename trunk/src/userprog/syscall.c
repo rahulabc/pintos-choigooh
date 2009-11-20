@@ -131,7 +131,6 @@ syscall_handler (struct intr_frame *f)
 				file_ = get_file(fd);
 				if(file_ == NULL) user_exit(-1);
 				lock_acquire(&file_lock);
-				if(get_sup_page_by_upage(*(char**)(f->esp + 8)) == NULL) user_exit(-1);
 				f->eax = file_write(file_, *(char**)(f->esp + 8), *(off_t*)(f->esp + 12));
 				lock_release(&file_lock);
 			}
