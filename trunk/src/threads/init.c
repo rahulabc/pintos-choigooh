@@ -109,10 +109,6 @@ main (void)
   file_init();
 #endif
 	
-	frame_table_init();
-	sup_page_table_init();
-	swap_init();
-	
   /* Start thread scheduler and enable interrupts. */
   thread_start ();
   serial_init_queue ();
@@ -123,6 +119,12 @@ main (void)
   disk_init ();
   filesys_init (format_filesys);
 #endif
+
+	frame_table_init();
+	sup_page_table_init();
+	swap_init();
+	
+
   printf ("Boot complete.\n");
   
   /* Run actions specified on kernel command line. */
