@@ -165,7 +165,7 @@ page_fault (struct intr_frame *f)
 		{
 			if(p->swap_exist)
 			{
-				void* kpage = get_user_frame(false);
+				void* kpage = get_user_frame(true);
 				swap_in(kpage, p->swap_slot_index);
 				ASSERT(install_page(fault_page, kpage, true));
 				
@@ -179,7 +179,7 @@ page_fault (struct intr_frame *f)
 		else if(p == NULL && is_user_vaddr(fault_addr) && write)
 		{
 			//stack growth
-			void* kpage = get_user_frame(true);
+			void* kpage = get_user_frame(false);
 			ASSERT(install_page(fault_page, kpage, true));
 			
 			return;
