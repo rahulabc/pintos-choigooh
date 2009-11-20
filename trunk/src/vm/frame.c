@@ -65,6 +65,7 @@ void remove_frame(void* kpage)
 			break;
 		}
     }
+	ASSERT(e==list_end(&frame_table));
   //  lock_release(&f_lock);
 }
 
@@ -95,7 +96,9 @@ void* get_user_frame(bool zero)
 		kpage = (zero ? palloc_get_page(PAL_USER | PAL_ZERO) : palloc_get_page(PAL_USER));
 	}	
 
-	ASSERT(kpage != NULL);
+	if(kpage==NULL)
+		printf("fff\n");
+	//ASSERT(kpage != NULL);
 	add_sup_page(kpage);
 	add_frame(kpage);
 
@@ -136,13 +139,15 @@ void eviction()
 			struct sup_page *p = get_sup_page_by_kpage(frame->kpage);
 			if(p->swap_exist)
 			{
-				swap_out(frame->kpage, p->swap_slot_index);
+				ASSERT(swap_out(frame->kpage, p->swap_slot_index)==-1);
 			}
 			else
 			{
 				p->swap_slot_index = swap_out(frame->kpage, -1);
 				p->swap_exist = true;
+				ASSERT(p->swap_slot_index!=-1);
 			}
+			printf("free!! upage : %d kpage : %u\n", p->upage, p->kpage);
 			unmap_user_frame(frame->kpage);
 			break;
         }
