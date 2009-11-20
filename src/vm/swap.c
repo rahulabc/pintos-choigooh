@@ -43,7 +43,7 @@ void swap_in(void* kpage, int32_t swap_slot_index) {
 	disk = disk_get(1,1);
 	int i;
 	for (i = 0 ; i< 8 ; i++)
-		disk_read (disk, swap_slot_index*8 + i, kpage + (i * DISK_SECTOR_SIZE));
+		disk_read (disk, swap_slot_index + i, kpage + (i * DISK_SECTOR_SIZE));
 /*
 	int size_swap_slot = sizeof(struct swap_slot);
 	struct swap_slot* empty_slot = ( struct swap_slot* ) malloc(size_swap_slot);
@@ -68,7 +68,7 @@ int32_t swap_out(void* kpage, int32_t swap_slot_index){
 	if(swap_slot_index>=0) {
 		int i;
 		for (i = 0 ; i< 8 ; i++)
-			disk_write (disk, swap_slot_index*8 + i, kpage + (i * DISK_SECTOR_SIZE));
+			disk_write (disk, swap_slot_index + i, kpage + (i * DISK_SECTOR_SIZE));
 		return swap_slot_index;
 	}
 	else{
@@ -76,7 +76,7 @@ int32_t swap_out(void* kpage, int32_t swap_slot_index){
 			if (!pointer_end()){
 				int i;
 				for (i = 0; i < 8; i++)
-					disk_write(disk, empty_slot_pointer * 8 + i, kpage + (i * DISK_SECTOR_SIZE));
+					disk_write(disk, empty_slot_pointer + i, kpage + (i * DISK_SECTOR_SIZE));
 				empty_slot_pointer ++;
 				return empty_slot_pointer-1;
 			}
@@ -91,7 +91,7 @@ int32_t swap_out(void* kpage, int32_t swap_slot_index){
 			int32_t write_index = write_slot->index ;
 			int i;
 			for (i = 0; i < 8; i++)
-				disk_write(disk, write_index * 8 + i, kpage + (i * DISK_SECTOR_SIZE)) ;
+				disk_write(disk, write_index + i, kpage + (i * DISK_SECTOR_SIZE)) ;
 			return write_index;
 		}
 	}

@@ -586,6 +586,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
       size_t page_zero_bytes = PGSIZE - page_read_bytes;
 
       /* Get a page of memory. */
+	  //printf("%u\n", (uint32_t *)upage);
       uint8_t *kpage = get_user_frame (false);
       if (kpage == NULL)
         return false;
