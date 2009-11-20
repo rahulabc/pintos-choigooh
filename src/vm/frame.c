@@ -42,7 +42,8 @@ void add_frame(void* kpage)
 	struct frame* f = (struct frame*)malloc(sizeof(struct frame));
 	f->kpage = kpage;
 	f->pd = thread_current()->pagedir;
-
+	if(f->kpage==0xc01190f8)
+		printf("%0xu\n", f->pd);
   //  lock_acquire(&f_lock);
 	list_push_back(&frame_table, &f->elem);
     //lock_release(&f_lock);
@@ -91,11 +92,12 @@ void* get_user_frame(bool zero)
 	if(kpage == NULL)
 	{
 		eviction();
-		kpage = (zero ? palloc_get_page(PAL_USER | PAL_ZERO) : palloc_get_page(PAL_USER));	
-	}
-	
-	add_frame(kpage);
+		kpage = (zero ? palloc_get_page(PAL_USER | PAL_ZERO) : palloc_get_page(PAL_USER));
+	}	
+
+	ASSERT(kpage != NULL);
 	add_sup_page(kpage);
+	add_frame(kpage);
 
 	return kpage;
 }
@@ -122,7 +124,8 @@ void eviction()
     while(true)
     {
         i++;
-        struct frame *frame = list_pop_front(&frame_table);
+		struct list_elem *e = list_pop_front(&frame_table);
+		struct frame *frame = list_entry(e, struct frame, elem);
         if(pagedir_is_accessed(frame->pd, frame->upage))
         {
             pagedir_set_accessed(frame->pd, frame->upage, false);
@@ -130,21 +133,18 @@ void eviction()
         }
         else
         {
-           if(pagedir_is_dirty(frame->pd, frame->upage))
-           {
-				struct sup_page *p = get_sup_page_by_kpage(frame->kpage);
-				if(p->swap_exist)
-				{
-					swap_out(frame->kpage, p->swap_slot_index);
-				}
-				else
-				{
-					p->swap_slot_index = swap_out(frame->kpage, -1);
-					p->swap_exist = true;
-				}
-           }
-           unmap_user_frame(frame->kpage);
-           break;
+			struct sup_page *p = get_sup_page_by_kpage(frame->kpage);
+			if(p->swap_exist)
+			{
+				swap_out(frame->kpage, p->swap_slot_index);
+			}
+			else
+			{
+				p->swap_slot_index = swap_out(frame->kpage, -1);
+				p->swap_exist = true;
+			}
+			unmap_user_frame(frame->kpage);
+			break;
         }
     }
   //  lock_release(&f_lock);
