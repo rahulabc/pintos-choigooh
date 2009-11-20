@@ -10,6 +10,7 @@
 #include "devices/input.h"
 #include "lib/user/syscall.h"
 #include "threads/synch.h"
+#include "vm/page.h"
 
 static struct lock file_lock;
 
@@ -98,7 +99,7 @@ syscall_handler (struct intr_frame *f)
 			break;
 
 		case SYS_READ:
-			if(*(off_t*)(f->esp + 12) < 0) user_exit(-1);
+			if(*(char**)(f->esp + 8) == NULL || *(off_t*)(f->esp + 12) <= 0) user_exit(-1);
 			fd = *(int*)(f->esp + 4);
 			if(fd == 0)	// if STDIN
 				f->eax = input_getc();
@@ -109,13 +110,14 @@ syscall_handler (struct intr_frame *f)
 				file_ = get_file(fd);
 				if(file_ == NULL) user_exit(-1);
 				lock_acquire(&file_lock);
+				if(get_sup_page_by_upage(*(char**)(f->esp + 8)) == NULL) user_exit(-1);
 				f->eax = file_read(file_, *(char**)(f->esp + 8), *(off_t*)(f->esp + 12));
 				lock_release(&file_lock);
 			}
 			break;
 
 		case SYS_WRITE:
-			if(*(char**)(f->esp + 8) == NULL) user_exit(-1);
+			if(*(char**)(f->esp + 8) == NULL || *(off_t*)(f->esp + 12) <= 0) user_exit(-1);
 			fd = *(int*)(f->esp + 4);
 			if(fd == 1)	// if STDOUT
 			{	
@@ -129,6 +131,7 @@ syscall_handler (struct intr_frame *f)
 				file_ = get_file(fd);
 				if(file_ == NULL) user_exit(-1);
 				lock_acquire(&file_lock);
+				if(get_sup_page_by_upage(*(char**)(f->esp + 8)) == NULL) user_exit(-1);
 				f->eax = file_write(file_, *(char**)(f->esp + 8), *(off_t*)(f->esp + 12));
 				lock_release(&file_lock);
 			}
