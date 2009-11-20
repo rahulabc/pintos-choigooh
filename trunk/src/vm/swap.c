@@ -3,7 +3,7 @@
 #include "devices/disk.h"
 
 int32_t continuous_empty_slot;
-int32_t swap_slot_max;
+int32_t swap_max_slot;
 struct disk *swap_disk;
 
 void swap_init()  {
@@ -14,7 +14,7 @@ void swap_init()  {
 }
 
 bool is_empty_slot(int32_t swap_slot_index){
-	if (swap_slot_index >= continuous_empty_slot && swap_slot_index <= swap_slot_max){
+	if (swap_slot_index >= continuous_empty_slot && swap_slot_index <= swap_max_slot){
 		return true;
 	}
 	
@@ -44,7 +44,7 @@ void swap_clear(int32_t swap_slot_index) {
 }
 
 int32_t swap_out(void* kpage, int32_t swap_slot_index){
-	ASSERT(swap_slot_index >= -1 && swap_slot_index <= swap_slot_max);
+	ASSERT(swap_slot_index >= -1 && swap_slot_index <= swap_max_slot);
 	ASSERT(is_empty_slot(swap_slot_index));
 	
 	if(swap_slot_index >= 0) {
@@ -55,7 +55,7 @@ int32_t swap_out(void* kpage, int32_t swap_slot_index){
 	}
 	else {
 		if(list_empty(&swap_table)){
-			if (continuous_empty_slot <= swap_slot_max) {
+			if (continuous_empty_slot <= swap_max_slot) {
 				int i;
 				for (i = 0; i < 8; i++)
 					disk_write(swap_disk, continuous_empty_slot * 8 + i, kpage + (i * DISK_SECTOR_SIZE));
@@ -73,7 +73,7 @@ int32_t swap_out(void* kpage, int32_t swap_slot_index){
 			int32_t write_index = write_slot->index ;
 			int i;
 			for (i = 0; i < 8; i++)
-				disk_write(disk, write_index + i, kpage + (i * DISK_SECTOR_SIZE)) ;
+				disk_write(swap_disk, write_index + i, kpage + (i * DISK_SECTOR_SIZE)) ;
 			return write_index;
 		}
 	}
