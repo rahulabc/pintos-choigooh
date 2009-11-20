@@ -120,7 +120,7 @@ void eviction(bool zero)
 				p->swap_exist = true;
 				ASSERT(p->swap_slot_index!=-1);
 			}
-			printf("evicted : %u %u\n", p->upage, p->kpage);
+			//printf("evicted : %u %u\n", p->upage, p->kpage);
     		unmap_user_frame(frame->kpage);
 			val = palloc_get_page(zero ? (PAL_USER | PAL_ZERO) : PAL_USER);
         }

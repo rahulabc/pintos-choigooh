@@ -731,6 +731,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->status = THREAD_BLOCKED;
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
+  t->esp = PHYS_BASE - PGSIZE;
   t->priority = priority;
 	t->time_slice = priority + 5;
   t->magic = THREAD_MAGIC;

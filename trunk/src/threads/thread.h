@@ -99,6 +99,7 @@ struct thread
 		struct thread* parent;            /* pointer to parent */
 		struct list open_file_list;       
 		struct list child_list;           /* child list */
+	void *esp;
 
 #ifdef USERPROG
     /*z Owned by userprog/process.c. */

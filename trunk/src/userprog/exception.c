@@ -114,7 +114,21 @@ kill (struct intr_frame *f)
       thread_exit ();
     }
 }
-
+bool is_stack_addr(void *esp, void* addr, bool user)
+{
+	void * page = pg_round_down(addr);
+	if(page < PHYS_BASE - PGSIZE * 2048)
+		return false;
+	if(user)
+	{
+		thread_current()->esp = esp;
+		if(addr >= esp)
+			return true;
+		int diff = esp - addr;
+		return (diff == 4 || diff == 32);
+	}
+	return addr >= pg_round_down(thread_current()->esp);
+}
 /* Page fault handler.  This is a skeleton that must be filled in
    to implement virtual memory.  Some solutions to project 2 may
    also require modifying this code.
@@ -154,7 +168,7 @@ page_fault (struct intr_frame *f)
   not_present = (f->error_code & PF_P) == 0;
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
-
+  //printf("%u\n", fault_addr);
 	void* fault_page = pg_round_down(fault_addr);
 	 
 	if(not_present)
@@ -171,12 +185,9 @@ page_fault (struct intr_frame *f)
 				
 				return;
 			}
-			else
-			{
-				user_exit(-1);
-			}
+			ASSERT(false);
 		}
-		else if(p == NULL && is_user_vaddr(fault_addr) && write)
+		else if(p == NULL && is_stack_addr(f->esp, fault_addr, user))
 		{
 			//stack growth
 			void* kpage = get_user_frame(false);
@@ -189,9 +200,7 @@ page_fault (struct intr_frame *f)
 			user_exit(-1);
 		}
 	}
-	else
-	{
-		user_exit(-1);
-	}
+	user_exit(-1);
 }
+
 
