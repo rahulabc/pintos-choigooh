@@ -1,84 +1,66 @@
 #include "vm/swap.h"
 #include "threads/malloc.h"
-#define SWAP_MAX 4194304 -1
 #include "devices/disk.h"
 
-static int32_t empty_slot_pointer;
-
-struct disk *disk;
+int32_t continuous_empty_slot;
+int32_t swap_slot_max;
+struct disk *swap_disk;
 
 void swap_init()  {
 	list_init(&swap_table);
-	empty_slot_pointer=0;
+	swap_disk = disk_get(1, 1);
+	swap_max_slot = disk_size(swap_disk) / 8 - 1;
+	continuous_empty_slot = 0;
 }
 
-int empty_slot_index(int32_t swap_slot_index){
-	if (swap_slot_index >= empty_slot_pointer && swap_slot_index <=SWAP_MAX){
-		return 1;
+bool is_empty_slot(int32_t swap_slot_index){
+	if (swap_slot_index >= continuous_empty_slot && swap_slot_index <= swap_slot_max){
+		return true;
 	}
+	
 	struct list_elem *e;
 	for (e = list_begin (&swap_table); e != list_end (&swap_table); e = list_next (e))   {
 		struct swap_slot* s = list_entry (e, struct swap_slot, elem);
-		int32_t index = s -> index ;
-		if ( index == swap_slot_index)
-			return 1;
+		if (s->index == swap_slot_index)
+			return true;
 	}
-	return 0;
-}
-
-int pointer_end(){
-	return (empty_slot_pointer==SWAP_MAX);
-}
-
-int right_index(int32_t swap_slot_index){
-	if (swap_slot_index<0 || swap_slot_index>SWAP_MAX){
-		return 0;
-	}
-	return 1;
+	return false;
 }
 
 void swap_in(void* kpage, int32_t swap_slot_index) {
-	ASSERT (right_index (swap_slot_index)) ;
-	ASSERT (!empty_slot_index (swap_slot_index)) ;
-	disk = disk_get(1,1);
+	ASSERT(!is_empty_slot(swap_slot_index));
+	
 	int i;
-	for (i = 0 ; i< 8 ; i++)
-		disk_read (disk, swap_slot_index + i, kpage + (i * DISK_SECTOR_SIZE));
-/*
-	int size_swap_slot = sizeof(struct swap_slot);
-	struct swap_slot* empty_slot = ( struct swap_slot* ) malloc(size_swap_slot);
-	empty_slot->index = swap_slot_index;
-	list_push_front(&swap_table, &empty_slot->elem);
-*/
-
+	for (i = 0 ; i < 8 ; i++)
+		disk_read (swap_disk, swap_slot_index * 8 + i, kpage + (i * DISK_SECTOR_SIZE));
 }
 
 void swap_clear(int32_t swap_slot_index) {
-	ASSERT (right_index (swap_slot_index)) ;
-	ASSERT (!empty_slot_index (swap_slot_index)) ;
-	int size_swap_slot = sizeof(struct swap_slot);
-	struct swap_slot* empty_slot = ( struct swap_slot* ) malloc(size_swap_slot);
+	ASSERT(!is_empty_slot(swap_slot_index));
+	
+	struct swap_slot* empty_slot = (struct swap_slot* )malloc(sizeof(struct swap_slot));
 	empty_slot->index = swap_slot_index;
 	list_push_front(&swap_table, &empty_slot->elem);
 }
 
 int32_t swap_out(void* kpage, int32_t swap_slot_index){
-	ASSERT(swap_slot_index <= SWAP_MAX);
-	disk = disk_get(1,1);
-	if(swap_slot_index>=0) {
+	ASSERT(swap_slot_index >= -1 && swap_slot_index <= swap_slot_max);
+	ASSERT(is_empty_slot(swap_slot_index));
+	
+	if(swap_slot_index >= 0) {
 		int i;
 		for (i = 0 ; i< 8 ; i++)
-			disk_write (disk, swap_slot_index + i, kpage + (i * DISK_SECTOR_SIZE));
+			disk_write (swap_disk, swap_slot_index * 8 + i, kpage + (i * DISK_SECTOR_SIZE));
 		return swap_slot_index;
 	}
-	else{
+	else {
 		if(list_empty(&swap_table)){
-			if (!pointer_end()){
+			if (continuous_empty_slot <= swap_slot_max) {
 				int i;
 				for (i = 0; i < 8; i++)
-					disk_write(disk, empty_slot_pointer + i, kpage + (i * DISK_SECTOR_SIZE));
-				empty_slot_pointer ++;
-				return empty_slot_pointer-1;
+					disk_write(swap_disk, continuous_empty_slot * 8 + i, kpage + (i * DISK_SECTOR_SIZE));
+				continuous_empty_slot++;
+				return continuous_empty_slot-1;
 			}
 			else{
 				return -1;

@@ -82,10 +82,7 @@ void destroy_sup_page(struct thread* t)
 		{
 			list_remove(&p->elem);
 			if(p->swap_exist)
-			{
 				swap_clear(p->swap_slot_index);
-			}
-//			free(p);
 		}
   	}	
 }

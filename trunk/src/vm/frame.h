@@ -1,4 +1,6 @@
 #include <list.h>
+#include <stdint.h>
+#include <stdio.h>
 
 void frame_table_init();
 bool install_frame(void* upage, void* kpage);
