@@ -121,6 +121,7 @@ syscall_handler (struct intr_frame *f)
 				
 				lock_acquire(&file_lock);
 				int i;
+				// check page_fault
 				for(i = 0; i < size; i++)
 				{
 					if(buf + i >= PHYS_BASE)
@@ -129,7 +130,6 @@ syscall_handler (struct intr_frame *f)
 					if(!put_user(buf + i, 0))
 						user_exit(-1);
 				}
-			//	if(!is_user_vaddr(*(char**)(f->esp + 8)) || get_sup_page_by_upage(*(char**)(f->esp + 8)) == NULL) user_exit(-1);
 				f->eax = file_read(file_, buf, size);
 				lock_release(&file_lock);
 			}
@@ -155,6 +155,7 @@ syscall_handler (struct intr_frame *f)
 				if(file_ == NULL) user_exit(-1);
 				lock_acquire(&file_lock);
 				int i;
+				//check page fault
 				for(i = 0; i < size; i++)
 				{
 					if(buf + i >= PHYS_BASE)
@@ -163,7 +164,6 @@ syscall_handler (struct intr_frame *f)
 					if(!get_user(buf + i))
 						user_exit(-1);
 				}
-				//if(!is_user_vaddr(*(char**)(f->esp + 8)) || get_sup_page_by_upage(*(char**)(f->esp + 8)) == NULL) user_exit(-1);
 				f->eax = file_write(file_, *(char**)(f->esp + 8), *(off_t*)(f->esp + 12));
 				lock_release(&file_lock);
 			}

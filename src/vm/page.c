@@ -67,7 +67,6 @@ void remove_sup_page(void* kpage)
 			{
 				swap_clear(p->swap_slot_index);
 			}
-//			free(p);
 			return;
 		}
   	}	
