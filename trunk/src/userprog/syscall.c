@@ -108,7 +108,7 @@ syscall_handler (struct intr_frame *f)
 			buf = *(char**)(f->esp + 8);
 			size = *(off_t*)(f->esp + 12);
 			
-			if(buf == NULL || size <= 0) user_exit(-1);
+			if(buf == NULL || size < 0) user_exit(-1);
 			
 			if(fd == 0)	// if STDIN
 				f->eax = input_getc();
@@ -140,7 +140,7 @@ syscall_handler (struct intr_frame *f)
 			buf = *(char**)(f->esp + 8);
 			size = *(off_t*)(f->esp + 12);
 			
-			if(buf == NULL || size <= 0) user_exit(-1);
+			if(buf == NULL || size < 0) user_exit(-1);
 			
 			if(fd == 1)	// if STDOUT
 			{	
