@@ -10,7 +10,6 @@ void destroy_frame(uint32_t * pd);
 void* get_user_frame(bool zero);
 void free_user_frame(void *kpage);
 void unmap_user_frame(void *kpage);
-void eviction();
 
 struct frame
 {
