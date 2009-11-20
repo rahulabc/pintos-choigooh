@@ -159,18 +159,7 @@ execute_thread (void *file_name_)
 
   palloc_free_page (file_name);
 
-  struct list_elem *e;
-  struct sup_page *p;
-
-  for(e=list_begin(&sup_page_table); e!=list_end(&sup_page_table); e=list_next(e))
-  {
-	  p = list_entry(e, struct sup_page, elem);
-	  if((uint32_t *)(p->upage)==0)
-	  {
-		  printf("%u\n", p->upage);
-	  }
-  }
-  /* Start the user process by simulating a return from an
+ /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
      arguments on the stack in the form of a `struct intr_frame',
@@ -662,8 +651,6 @@ install_page (void *upage, void *kpage, bool writable)
 {
   struct thread *t = thread_current ();
 
-  if((uint32_t *)upage == 0)
-	  printf("Fuck!\n");
   /* Verify that there's not already a page at that virtual
      address, then map our page there. */
   return (pagedir_get_page (t->pagedir, upage) == NULL
