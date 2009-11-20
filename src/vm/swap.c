@@ -45,7 +45,7 @@ void swap_clear(int32_t swap_slot_index) {
 
 int32_t swap_out(void* kpage, int32_t swap_slot_index){
 	ASSERT(swap_slot_index >= -1 && swap_slot_index <= swap_max_slot);
-	ASSERT(is_empty_slot(swap_slot_index));
+	ASSERT(swap_slot_index == -1 || is_empty_slot(swap_slot_index));
 	
 	if(swap_slot_index >= 0) {
 		int i;

@@ -86,17 +86,12 @@ void destroy_frame(uint32_t * pd)
 
 void* get_user_frame(bool zero)
 {
-	void* kpage = (zero ? palloc_get_page(PAL_USER | PAL_ZERO) : palloc_get_page(PAL_USER));
+	void* kpage = palloc_get_page(zero ? (PAL_USER | PAL_ZERO) : PAL_USER);
 
 	if(kpage == NULL)
-	{
-		eviction();
-		kpage = (zero ? palloc_get_page(PAL_USER | PAL_ZERO) : palloc_get_page(PAL_USER));
-	}	
+		kpage = eviction(zero);
 
-	if(kpage==NULL)
-		printf("fff\n");
-	//ASSERT(kpage != NULL);
+	ASSERT(kpage != NULL);
 	add_sup_page(kpage);
 	add_frame(kpage);
 
@@ -116,13 +111,14 @@ void unmap_user_frame(void *kpage)
 	palloc_free_page(kpage);
 }
 
-void eviction()
+void eviction(bool zero)
 {
     int i, size;
+	void *val=NULL;
 //    lock_acquire(&f_lock);
     size = list_size(&frame_table);
     i = 0;
-    while(true)
+    do
     {
         i++;
 		struct list_elem *e = list_pop_front(&frame_table);
@@ -147,9 +143,9 @@ void eviction()
 			}
 			printf("free!! upage : %d kpage : %u\n", p->upage, p->kpage);
 			unmap_user_frame(frame->kpage);
-			break;
+			val = palloc_get_page(zero ? (PAL_USER | PAL_ZERO) : PAL_USER);
         }
-    }
+    }while(val==NULL);
   //  lock_release(&f_lock);
 }
 
