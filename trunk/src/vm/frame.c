@@ -47,6 +47,7 @@ void remove_frame(void* kpage)
 		f = list_entry (e, struct frame, elem);
 		if (f->kpage == kpage)
 		{
+			pagedir_clear_page(f->pd, f->upage);
 			list_remove(&f->elem);
 			break;
 		}
@@ -84,15 +85,15 @@ void* get_user_frame(bool zero)
 
 void free_user_frame(void *kpage)
 {
-    remove_frame(kpage);
     palloc_free_page(kpage);
+    remove_frame(kpage);
     remove_sup_page(kpage);
 }
 void unmap_user_frame(void *kpage)
 {
+	palloc_free_page(kpage);
 	remove_frame(kpage);
 	unmap_sup_page(kpage);
-	palloc_free_page(kpage);
 }
 
 void eviction(bool zero)
@@ -120,7 +121,6 @@ void eviction(bool zero)
 				p->swap_exist = true;
 				ASSERT(p->swap_slot_index!=-1);
 			}
-			//printf("evicted : %u %u\n", p->upage, p->kpage);
     		unmap_user_frame(frame->kpage);
 			val = palloc_get_page(zero ? (PAL_USER | PAL_ZERO) : PAL_USER);
         }
