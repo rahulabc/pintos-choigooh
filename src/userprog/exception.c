@@ -176,7 +176,7 @@ page_fault (struct intr_frame *f)
 				user_exit(-1);
 			}
 		}
-		else if(p == NULL && is_user_vaddr(fault_addr) && !write)
+		else if(p == NULL && is_user_vaddr(fault_addr) && write)
 		{
 			//stack growth
 			void* kpage = get_user_frame(true);
