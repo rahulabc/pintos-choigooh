@@ -23,10 +23,10 @@ test_main (void)
 	
   /* Initialize. */
 	memset(buf1, 1, SIZE);
-	memset(buf1, 2, SIZE);
-	memset(buf1, 3, SIZE);
-	memset(buf1, 4, SIZE);
-	memset(buf1, 5, SIZE);
+	memset(buf2, 2, SIZE);
+	memset(buf3, 3, SIZE);
+	memset(buf4, 4, SIZE);
+	memset(buf5, 5, SIZE);
 
 	msg ("Initially,  buf1 : %d, buf2 : %d, buf3 : %d, buf4 : %d, buf5 : %d", SIZE, SIZE*2, SIZE*3, SIZE*4, SIZE*5);
 

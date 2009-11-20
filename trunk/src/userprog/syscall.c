@@ -11,10 +11,13 @@
 #include "lib/user/syscall.h"
 #include "threads/synch.h"
 #include "vm/page.h"
+#include "threads/vaddr.h"
 
 static struct lock file_lock;
 
 static void syscall_handler (struct intr_frame *);
+static int get_user (const uint8_t *);
+static bool put_user (uint8_t *, uint8_t);
 
 void
 syscall_init (void) 
@@ -30,6 +33,8 @@ syscall_handler (struct intr_frame *f)
 	int fd;
 	struct file *file_;
 	struct thread * cur = thread_current();
+	off_t size;
+	char* buf;
 	
 	switch(syscall_num)
 	{
@@ -99,8 +104,12 @@ syscall_handler (struct intr_frame *f)
 			break;
 
 		case SYS_READ:
-			if(*(char**)(f->esp + 8) == NULL || *(off_t*)(f->esp + 12) <= 0) user_exit(-1);
 			fd = *(int*)(f->esp + 4);
+			buf = *(char**)(f->esp + 8);
+			size = *(off_t*)(f->esp + 12);
+			
+			if(buf == NULL || size <= 0) user_exit(-1);
+			
 			if(fd == 0)	// if STDIN
 				f->eax = input_getc();
 			else if(fd == 1 || fd == 2)
@@ -109,19 +118,33 @@ syscall_handler (struct intr_frame *f)
 			{
 				file_ = get_file(fd);
 				if(file_ == NULL) user_exit(-1);
+				
 				lock_acquire(&file_lock);
-				if(get_sup_page_by_upage(*(char**)(f->esp + 8)) == NULL) user_exit(-1);
-				f->eax = file_read(file_, *(char**)(f->esp + 8), *(off_t*)(f->esp + 12));
+				int i;
+				for(i = 0; i < size; i++)
+				{
+					if(buf + i >= PHYS_BASE)
+						user_exit(-1);
+					
+					if(!put_user(buf + i, 0))
+						user_exit(-1);
+				}
+			//	if(!is_user_vaddr(*(char**)(f->esp + 8)) || get_sup_page_by_upage(*(char**)(f->esp + 8)) == NULL) user_exit(-1);
+				f->eax = file_read(file_, buf, size);
 				lock_release(&file_lock);
 			}
 			break;
 
 		case SYS_WRITE:
-			if(*(char**)(f->esp + 8) == NULL || *(off_t*)(f->esp + 12) <= 0) user_exit(-1);
 			fd = *(int*)(f->esp + 4);
+			buf = *(char**)(f->esp + 8);
+			size = *(off_t*)(f->esp + 12);
+			
+			if(buf == NULL || size <= 0) user_exit(-1);
+			
 			if(fd == 1)	// if STDOUT
 			{	
-				putbuf(*(char**)(f->esp + 8), *(size_t*)(f->esp + 12));
+				putbuf(buf, size);
 				f->eax = *(int*)(f->esp + 12);
 			}
 			else if(fd == 0 || fd == 2)
@@ -131,6 +154,16 @@ syscall_handler (struct intr_frame *f)
 				file_ = get_file(fd);
 				if(file_ == NULL) user_exit(-1);
 				lock_acquire(&file_lock);
+				int i;
+				for(i = 0; i < size; i++)
+				{
+					if(buf + i >= PHYS_BASE)
+						user_exit(-1);
+					
+					if(!get_user(buf + i))
+						user_exit(-1);
+				}
+				//if(!is_user_vaddr(*(char**)(f->esp + 8)) || get_sup_page_by_upage(*(char**)(f->esp + 8)) == NULL) user_exit(-1);
 				f->eax = file_write(file_, *(char**)(f->esp + 8), *(off_t*)(f->esp + 12));
 				lock_release(&file_lock);
 			}
@@ -167,3 +200,30 @@ syscall_handler (struct intr_frame *f)
 			break;
 	}
 }
+
+
+/* Reads a byte at user virtual address UADDR.
+   UADDR must be below PHYS_BASE.
+   Returns the byte value if successful, -1 if a segfault
+   occurred. */
+static int
+get_user (const uint8_t *uaddr)
+{
+  int result;
+  asm ("movl $1f, %0; movzbl %1, %0; 1:"
+       : "=&a" (result) : "m" (*uaddr));
+  return result;
+}
+
+/* Writes BYTE to user address UDST.
+   UDST must be below PHYS_BASE.
+   Returns true if successful, false if a segfault occurred. */
+static bool
+put_user (uint8_t *udst, uint8_t byte)
+{
+  int error_code;
+  asm ("movl $1f, %0; movb %b2, %1; 1:"
+       : "=&a" (error_code), "=m" (*udst) : "r" (byte));
+  return error_code != -1;
+}
+
