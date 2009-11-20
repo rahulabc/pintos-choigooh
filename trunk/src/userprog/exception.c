@@ -114,6 +114,8 @@ kill (struct intr_frame *f)
       thread_exit ();
     }
 }
+
+// given address, return whether the address is in stack space or not
 bool is_stack_addr(void *esp, void* addr, bool user)
 {
 	void * page = pg_round_down(addr);
@@ -129,6 +131,7 @@ bool is_stack_addr(void *esp, void* addr, bool user)
 	}
 	return addr >= pg_round_down(thread_current()->esp);
 }
+
 /* Page fault handler.  This is a skeleton that must be filled in
    to implement virtual memory.  Some solutions to project 2 may
    also require modifying this code.
@@ -168,7 +171,6 @@ page_fault (struct intr_frame *f)
   not_present = (f->error_code & PF_P) == 0;
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
-  //printf("%u\n", fault_addr);
 	void* fault_page = pg_round_down(fault_addr);
 	 
 	if(not_present)
@@ -202,5 +204,3 @@ page_fault (struct intr_frame *f)
 	}
 	user_exit(-1);
 }
-
-
