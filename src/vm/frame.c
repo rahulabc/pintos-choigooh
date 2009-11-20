@@ -1,5 +1,3 @@
-#include <stdio.h>
-#include <list.h>
 #include "threads/synch.h"
 #include "threads/palloc.h"
 #include "threads/thread.h"
